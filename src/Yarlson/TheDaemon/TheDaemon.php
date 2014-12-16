@@ -90,7 +90,9 @@ class TheDaemon
     private function startDaemon()
     {
         $this->childPid = pcntl_fork();
-        cli_set_process_title('php-' . $this->processName . ': master process');
+        if (function_exists('cli_set_process_title')) {
+            \cli_set_process_title('php-' . $this->processName . ': master process');
+        }
 
         if ($this->childPid) {
             exit;
@@ -113,8 +115,9 @@ class TheDaemon
             posix_setgid($this->group);
 
             $pid = getmypid();
-
-            cli_set_process_title('php-' . $this->processName . ': ' . $callback);
+            if (function_exists('cli_set_process_title')) {
+                cli_set_process_title('php-' . $this->processName . ': ' . $callback);
+            }
 
             $this->callbacks[$callback]();
             sleep(10);
