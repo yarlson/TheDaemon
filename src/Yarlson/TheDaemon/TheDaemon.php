@@ -88,7 +88,7 @@ class TheDaemon
 
     private function startDaemon()
     {
-        if (!$pid = pcntl_fork()) {
+        if ($pid = pcntl_fork()) {
             exit;
         }
 
