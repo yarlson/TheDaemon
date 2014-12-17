@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/TheDaemon.php';
+require __DIR__ . '/Yarlson/TheDaemon//TheDaemon.php';
 
 $theDaemon = new \Yarlson\TheDaemon\TheDaemon(
     [

@@ -8,7 +8,6 @@ class TheDaemon
 
     private $stopServer = false;
 
-    private $childPid;
     private $childProcesses = [];
 
     private $processName = 'TheDaemon';
@@ -89,16 +88,16 @@ class TheDaemon
 
     private function startDaemon()
     {
-        $this->childPid = pcntl_fork();
+        if (!$pid = pcntl_fork()) {
+            exit;
+        }
+
         if (function_exists('cli_set_process_title')) {
             \cli_set_process_title('php-' . $this->processName . ': master process');
         }
 
-        if ($this->childPid) {
-            exit;
-        }
-
         posix_setsid();
+
         file_put_contents($this->getPidFile(), getmypid());
     }
 
@@ -116,7 +115,7 @@ class TheDaemon
 
             $pid = getmypid();
             if (function_exists('cli_set_process_title')) {
-                cli_set_process_title('php-' . $this->processName . ': ' . $callback);
+                \cli_set_process_title('php-' . $this->processName . ': ' . $callback);
             }
 
             $this->callbacks[$callback]();
