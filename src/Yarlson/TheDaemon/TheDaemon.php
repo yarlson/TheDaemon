@@ -4,22 +4,37 @@ namespace Yarlson\TheDaemon;
 
 class TheDaemon
 {
-    const DELAY = 1000000;
+    const DELAY = 1000;
 
     private $stopServer = false;
 
     private $childProcesses = [];
+
+    private $childProcessesMax = [];
+
+    private $maxChild = 0;
 
     private $processName = 'TheDaemon';
 
     private $callbacks;
 
     private $group;
+
     private $user;
 
     public function __construct($callbacks = array())
     {
-        $this->callbacks = $callbacks;
+        foreach ($callbacks as $key => $value) {
+            if (is_array($value)) {
+                $this->callbacks[$key] = $value[0];
+                $this->childProcessesMax[$key] = (int)$value[1];
+            } else {
+                $this->callbacks[$key] = $value;
+                $this->childProcessesMax[$key] = 1;
+            }
+            $this->childProcesses[$key] = [];
+            $this->maxChild += $this->childProcessesMax[$key];
+        }
     }
 
     public function init()
@@ -34,7 +49,7 @@ class TheDaemon
         $this->startDaemon();
 
         while (!$this->stopServer) {
-            if (count($this->childProcesses) < count($this->callbacks)) {
+            if (count($this->childProcesses, COUNT_RECURSIVE) - count($this->childProcesses) < $this->maxChild) {
                 $this->startChildProcess();
             }
 
@@ -45,8 +60,15 @@ class TheDaemon
                     $this->childProcesses = [];
                     break;
                 } else {
-                    $signaled_callback = array_search($signaled_pid, $this->childProcesses);
-                    unset($this->childProcesses[$signaled_callback]);
+                    foreach ($this->childProcesses as $key => $childPids) {
+                        if (is_array($childPids)) {
+                            foreach ($childPids as $keyPid => $value) {
+                                if ($value == $signaled_pid) {
+                                    unset($this->childProcesses[$key][$keyPid]);
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -75,7 +97,7 @@ class TheDaemon
     private function getNotRunningCallback()
     {
         foreach ($this->callbacks as $callback => $value) {
-            if (!isset($this->childProcesses[$callback])) {
+            if (!isset($this->childProcesses[$callback]) || count($this->childProcesses[$callback]) < $this->childProcessesMax[$callback]) {
                 return $callback;
             }
         }
@@ -107,8 +129,9 @@ class TheDaemon
 
         $callback = $this->getNotRunningCallback();
 
-        if ($pid == -1) {} elseif ($pid) {
-            $this->childProcesses[$callback] = $pid;
+        if ($pid == -1) {
+        } elseif ($pid) {
+            $this->childProcesses[$callback][] = $pid;;
         } else {
             posix_setuid($this->user);
             posix_setgid($this->group);
@@ -119,8 +142,7 @@ class TheDaemon
             }
 
             $this->callbacks[$callback]();
-            sleep(10);
-
+            usleep(2 * self::DELAY);
             exit;
         }
     }
@@ -128,6 +150,6 @@ class TheDaemon
     public function setGroupAndUser()
     {
         $this->group = posix_getgrnam('www-data')['gid'];
-        $this->user  = posix_getpwnam('www-data')['uid'];
+        $this->user = posix_getpwnam('www-data')['uid'];
     }
 }
