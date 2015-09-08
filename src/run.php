@@ -18,4 +18,10 @@ $theDaemon = new \Yarlson\TheDaemon\TheDaemon(
     ]
 );
 
+$signalHeader = function ($signo) use ($theDaemon) {
+    $theDaemon->signalHandler($signo);
+};
+
+pcntl_signal(SIGTERM, $signalHeader);
+
 $theDaemon->init();

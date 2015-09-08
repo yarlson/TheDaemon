@@ -1,6 +1,7 @@
 <?php
-
 namespace Yarlson\TheDaemon;
+
+declare(ticks = 1);
 
 class TheDaemon
 {
@@ -72,8 +73,6 @@ class TheDaemon
                 }
             }
         }
-
-        declare (ticks = 1);
     }
 
     public function isDaemonActive()
@@ -136,7 +135,8 @@ class TheDaemon
             posix_setuid($this->user);
             posix_setgid($this->group);
 
-            $pid = getmypid();
+            $this->childProcesses = [];
+
             if (function_exists('cli_set_process_title')) {
                 \cli_set_process_title('php-' . $this->processName . ': ' . $callback);
             }
@@ -151,5 +151,20 @@ class TheDaemon
     {
         $this->group = posix_getgrnam('www-data')['gid'];
         $this->user = posix_getpwnam('www-data')['uid'];
+    }
+
+    public function killChildProcesses()
+    {
+        foreach ($this->childProcesses as $childProcesses) {
+            foreach ($childProcesses as $pid) {
+                exec("kill -15 $pid");
+            }
+        }
+    }
+
+    public function signalHandler($signo)
+    {
+        $this->stopServer = true;
+        $this->killChildProcesses();
     }
 }
