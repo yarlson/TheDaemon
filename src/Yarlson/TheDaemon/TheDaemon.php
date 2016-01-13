@@ -23,8 +23,11 @@ class TheDaemon
 
     private $user;
 
-    public function __construct($callbacks = array())
+    private $demonized;
+
+    public function __construct($callbacks = array(), $demonized = true)
     {
+        $this->demonized = $demonized;
         foreach ($callbacks as $key => $value) {
             if (is_array($value)) {
                 $this->callbacks[$key] = $value[0];
@@ -109,8 +112,10 @@ class TheDaemon
 
     private function startDaemon()
     {
-        if ($pid = pcntl_fork()) {
-            exit;
+        if ($this->demonized) {
+            if ($pid = pcntl_fork()) {
+                exit;
+            }
         }
 
         if (function_exists('cli_set_process_title')) {
