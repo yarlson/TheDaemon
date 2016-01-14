@@ -84,7 +84,7 @@ class TheDaemon
 
         if (is_file($pid_file)) {
             $pid = file_get_contents($pid_file);
-            if (posix_kill($pid, 0)) {
+            if (posix_kill($pid, 0) && $this->demonized) {
                 return true;
             } else {
                 if (!unlink($pid_file)) {
