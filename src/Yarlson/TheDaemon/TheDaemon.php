@@ -163,6 +163,9 @@ class TheDaemon
         foreach ($this->childProcesses as $childProcesses) {
             foreach ($childProcesses as $pid) {
                 exec("kill -15 $pid");
+                while (posix_getpgid($pid)) {
+                    sleep(1);
+                }
             }
         }
     }
