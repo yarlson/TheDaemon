@@ -163,7 +163,7 @@ class TheDaemon
         foreach ($this->childProcesses as $childProcesses) {
             foreach ($childProcesses as $pid) {
                 exec("kill -15 $pid");
-                while (posix_getpgid($pid)) {
+                while (posix_getpgid($pid) && !exec('cat /proc/' . $pid . '/status | grep zombie')) {
                     sleep(1);
                 }
             }
